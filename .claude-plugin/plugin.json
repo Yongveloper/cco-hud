@@ -1,0 +1,13 @@
+{
+  "name": "cco-hud",
+  "version": "1.0.0",
+  "description": "Personal Claude Code status line: 5h/7d rate limits with reset countdown, model-scoped weekly limit, context usage, git, tool activity",
+  "author": {
+    "name": "yongveloper",
+    "email": "dev_yong@kakao.com"
+  },
+  "repository": "https://github.com/yongveloper/cco-hud",
+  "license": "MIT",
+  "commands": ["./commands/setup.md"],
+  "keywords": ["statusline", "hud", "rate-limits", "i18n"]
+}

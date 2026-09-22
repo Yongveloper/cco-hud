@@ -1,0 +1,150 @@
+export interface StdinInput {
+  model: {
+    display_name: string;
+  };
+  context_window: {
+    context_window_size: number;
+    current_usage?: {
+      input_tokens: number;
+      cache_creation_input_tokens: number;
+      cache_read_input_tokens: number;
+    };
+  };
+  cost: {
+    total_cost_usd: number;
+  };
+  cwd?: string;
+  transcript_path?: string;
+  // Native fields from Claude Code stdin
+  used_percentage?: number;
+  remaining_percentage?: number;
+  total_duration_ms?: number;
+  version?: string;
+  total_lines_added?: number;
+  total_lines_removed?: number;
+  output_style?: string;
+}
+
+export interface Config {
+  language: 'en' | 'ko' | 'auto';
+  plan: 'pro' | 'max100' | 'max200' | 'enterprise';
+  cache: {
+    ttlSeconds: number;
+  };
+  display?: {
+    showTools?: boolean;
+    showAgents?: boolean;
+    showTodos?: boolean;
+    showStats?: boolean;
+    showTokenBreakdown?: boolean;
+  };
+}
+
+export const DEFAULT_CONFIG: Config = {
+  language: 'ko',
+  plan: 'max100',
+  cache: {
+    ttlSeconds: 300,
+  },
+};
+
+export interface GitInfo {
+  branch: string;
+  dirty: boolean;
+  ahead: number;
+  behind: number;
+}
+
+export interface RateLimitInfo {
+  utilization: number;
+  resets_at?: string;
+}
+
+export interface UsageLimits {
+  five_hour?: RateLimitInfo;
+  seven_day?: RateLimitInfo;
+  seven_day_sonnet?: RateLimitInfo;
+  seven_day_scoped?: RateLimitInfo & { model: string };
+}
+
+export interface ConfigCounts {
+  claudeMdCount: number;
+  rulesCount: number;
+  mcpCount: number;
+  hooksCount: number;
+}
+
+export interface ToolEntry {
+  name: string;
+  target?: string;
+  status: 'running' | 'completed' | 'error';
+  startTime: Date;
+  endTime?: Date;
+}
+
+export interface AgentEntry {
+  type: string;
+  model?: string;
+  description?: string;
+  status: 'running' | 'completed';
+  startTime: Date;
+  endTime?: Date;
+}
+
+export interface TodoEntry {
+  id: string;
+  content: string;
+  status: 'pending' | 'in_progress' | 'completed';
+}
+
+export interface TranscriptData {
+  sessionStart?: Date;
+  tools: ToolEntry[];
+  agents: AgentEntry[];
+  todos: TodoEntry[];
+  lastSkill?: { name: string; timestamp: Date };
+  isThinking?: boolean;
+  toolCallCount: number;
+  agentCallCount: number;
+  skillCallCount: number;
+}
+
+export interface RenderContext {
+  stdin: StdinInput;
+  config: Config;
+  transcript: TranscriptData;
+  configCounts: ConfigCounts;
+  gitInfo?: GitInfo;
+  sessionDuration: string;
+  rateLimits: UsageLimits | null;
+}
+
+export interface Translations {
+  labels: {
+    '5h': string;
+    '7d': string;
+    '7d_all': string;
+    '7d_sonnet': string;
+    cost: string;
+  };
+  time: {
+    hours: string;
+    minutes: string;
+    shortHours: string;
+    shortMinutes: string;
+    shortDays: string;
+  };
+  errors: {
+    no_context: string;
+  };
+  contextWarning?: {
+    warning: string;
+    critical: string;
+  };
+  todos: {
+    allComplete: string;
+  };
+  stats: {
+    thinking: string;
+  };
+}

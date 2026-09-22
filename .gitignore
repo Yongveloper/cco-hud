@@ -1,0 +1,15 @@
+node_modules/
+bun.lockb
+*.log
+# Secrets / credentials (defensive)
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+credentials*.json
+*.secret
+# Dev / benchmark artifacts
+results.tsv
+bench*.ts

@@ -1,0 +1,20 @@
+{
+  "name": "cco-hud",
+  "owner": {
+    "name": "yongveloper",
+    "email": "dev_yong@kakao.com"
+  },
+  "metadata": {
+    "description": "Personal fork of claude-ultimate-hud with weekly reset countdown and model-scoped weekly limit",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "cco-hud",
+      "source": "./",
+      "description": "Status line: model, context bar, 5h limit + reset, 7d limit + reset countdown (days), model-scoped weekly limit (e.g. Fable), project/git info, tool activity, todos. Korean/English.",
+      "category": "monitoring",
+      "tags": ["statusline", "hud", "monitoring", "rate-limits"]
+    }
+  ]
+}
