@@ -1,0 +1,80 @@
+{
+  "session_id": "00000000-0000-0000-0000-000000000000",
+  "transcript_path": "",
+  "cwd": "/Users/yong/dev/playground/cco-hud",
+  "scratchpad_dir": "/tmp",
+  "prompt_id": "00000000-0000-0000-0000-000000000000",
+  "effort": {
+    "level": "high"
+  },
+  "session_name": "Claude code HUD 주간 한도 시간 노출",
+  "model": {
+    "id": "claude-fable-5-1",
+    "display_name": "Fable 5.1"
+  },
+  "workspace": {
+    "current_dir": "/Users/yong/dev/playground/cco-hud",
+    "project_dir": "/Users/yong/dev/playground/cco-hud",
+    "added_dirs": [],
+    "repo": {
+      "host": "github.com",
+      "owner": "Yongveloper",
+      "name": "cco-hud"
+    }
+  },
+  "version": "2.1.278",
+  "output_style": {
+    "name": "default"
+  },
+  "cost": {
+    "total_cost_usd": 6.1313739,
+    "total_duration_ms": 1607717,
+    "total_api_duration_ms": 1062112,
+    "total_lines_added": 38,
+    "total_lines_removed": 0
+  },
+  "context_window": {
+    "total_input_tokens": 131241,
+    "total_output_tokens": 5160,
+    "context_window_size": 1000000,
+    "current_usage": {
+      "input_tokens": 32,
+      "output_tokens": 5160,
+      "cache_creation_input_tokens": 1898,
+      "cache_read_input_tokens": 129311
+    },
+    "used_percentage": 13,
+    "remaining_percentage": 87
+  },
+  "exceeds_200k_tokens": false,
+  "prompt_cache": {
+    "warm": true,
+    "caching_observed": true,
+    "ttl": "1h",
+    "expires_at": 1790088040,
+    "requests": 61,
+    "misses": 0,
+    "expected_rebuilds": 0,
+    "hit_ratio": 0.9798863252418956,
+    "cache_write_tokens": 103629,
+    "miss_recache_tokens": 0,
+    "last_miss_at": null,
+    "last_miss_cause": null,
+    "miss_causes": {},
+    "recache_tokens_if_cold": 131241
+  },
+  "fast_mode": false,
+  "thinking": {
+    "enabled": true
+  },
+  "rate_limits": {
+    "five_hour": {
+      "used_percentage": 9,
+      "resets_at": 1790097000
+    },
+    "seven_day": {
+      "used_percentage": 71,
+      "resets_at": 1790092800
+    }
+  }
+}

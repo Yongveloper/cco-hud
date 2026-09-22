@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import type { UsageLimits } from '../types.js';
+import type { UsageLimits, RateLimitInfo } from '../types.js';
 import { getCredentials } from './credentials.js';
 import { debugError, debugTrace } from './errors.js';
 import {
@@ -139,22 +139,55 @@ async function doFetch(): Promise<UsageLimits | null> {
 }
 
 function extractLimits(data: Record<string, unknown>): UsageLimits {
+  const limits = Array.isArray(data.limits) ? (data.limits as LimitEntry[]) : [];
   return {
-    five_hour: data.five_hour as UsageLimits['five_hour'],
-    seven_day: data.seven_day as UsageLimits['seven_day'],
-    seven_day_sonnet: data.seven_day_sonnet as UsageLimits['seven_day_sonnet'],
-    seven_day_scoped: extractScopedLimit(data.limits),
+    five_hour: withMeta(data.five_hour as RateLimitInfo | undefined, findLimit(limits, 'session')),
+    seven_day: withMeta(data.seven_day as RateLimitInfo | undefined, findLimit(limits, 'weekly_all')),
+    seven_day_sonnet: (data.seven_day_sonnet as UsageLimits['seven_day_sonnet']) ?? undefined,
+    seven_day_scoped: extractScopedLimit(limits),
+    source: 'api',
   };
 }
 
+interface LimitEntry {
+  kind?: string;
+  percent?: number;
+  resets_at?: string | null;
+  severity?: string;
+  is_active?: boolean;
+  scope?: { model?: { display_name?: string } };
+}
+
+function findLimit(limits: LimitEntry[], kind: string): LimitEntry | undefined {
+  return limits.find((l) => l?.kind === kind);
+}
+
+// Copy severity/is_active from limits[] entry onto the top-level info object
+function withMeta(
+  info: RateLimitInfo | undefined,
+  entry: LimitEntry | undefined,
+): RateLimitInfo | undefined {
+  if (!info || !entry) return info;
+  const out: RateLimitInfo = { ...info };
+  if (typeof entry.severity === 'string') out.severity = entry.severity;
+  if (typeof entry.is_active === 'boolean') out.is_active = entry.is_active;
+  return out;
+}
+
 // Model-scoped weekly limit (e.g. Fable) — only exposed via limits[] array, not a top-level key
-function extractScopedLimit(limits: unknown): UsageLimits['seven_day_scoped'] {
-  if (!Array.isArray(limits)) return undefined;
+function extractScopedLimit(limits: LimitEntry[]): UsageLimits['seven_day_scoped'] {
   for (const l of limits) {
     if (l?.kind !== 'weekly_scoped') continue;
     const model = l?.scope?.model?.display_name;
     if (typeof model !== 'string' || typeof l.percent !== 'number') continue;
-    return { model, utilization: l.percent, resets_at: l.resets_at ?? undefined };
+    const scoped: UsageLimits['seven_day_scoped'] = {
+      model,
+      utilization: l.percent,
+      resets_at: l.resets_at ?? undefined,
+    };
+    if (typeof l.severity === 'string') scoped.severity = l.severity;
+    if (typeof l.is_active === 'boolean') scoped.is_active = l.is_active;
+    return scoped;
   }
   return undefined;
 }
@@ -165,7 +198,7 @@ function loadFileCache(maxAgeSeconds: number): UsageLimits | null {
   try {
     const content = JSON.parse(fs.readFileSync(CACHE_FILE, 'utf-8'));
     const ageSeconds = (Date.now() - content.timestamp) / 1000;
-    if (ageSeconds < maxAgeSeconds) return content.data as UsageLimits;
+    if (ageSeconds < maxAgeSeconds) return { ...(content.data as UsageLimits), source: 'api' };
     return null;
   } catch {
     return null;

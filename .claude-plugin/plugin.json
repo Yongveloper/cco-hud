@@ -8,6 +8,10 @@
   },
   "repository": "https://github.com/yongveloper/cco-hud",
   "license": "MIT",
-  "commands": ["./commands/setup.md"],
-  "keywords": ["statusline", "hud", "rate-limits", "i18n"]
+  "keywords": [
+    "statusline",
+    "hud",
+    "rate-limits",
+    "i18n"
+  ]
 }

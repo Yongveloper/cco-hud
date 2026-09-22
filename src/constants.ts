@@ -1,14 +1,45 @@
 /** Width of the progress bar in terminal characters */
 export const PROGRESS_BAR_WIDTH = 10;
 
-/** Color threshold: green → yellow */
+/** Width of the progress bar in compact mode */
+export const PROGRESS_BAR_WIDTH_COMPACT = 6;
+
+/** Progress bar glyphs */
+export const BAR_FILLED = '▰';
+export const BAR_EMPTY = '▱';
+
+/** Color threshold: dim → yellow (absolute fallback) */
 export const COLOR_THRESHOLD_WARNING = 50;
 
-/** Color threshold: yellow → red */
+/** Color threshold: yellow → red (absolute fallback) */
 export const COLOR_THRESHOLD_DANGER = 80;
 
 /** Context % threshold for showing token breakdown */
 export const CONTEXT_HIGH_THRESHOLD = 85;
+
+/** Context % at which ` ⚠ /compact` hint is appended */
+export const CONTEXT_WARN_THRESHOLD = 80;
+
+/** Context % at which the whole context group turns red */
+export const CONTEXT_DANGER_THRESHOLD = 90;
+
+/** Windowed limits: yellow when pct exceeds expected-by-elapsed-time by this margin */
+export const RELATIVE_WARN_MARGIN = 15;
+
+/** Windowed limits: red when pct exceeds expected-by-elapsed-time by this margin */
+export const RELATIVE_DANGER_MARGIN = 30;
+
+/** Windowed limits: red regardless of elapsed time at/above this pct */
+export const RELATIVE_HARD_DANGER = 90;
+
+/** Prompt cache hit ratio (%) below which the badge turns yellow */
+export const CACHE_WARN_THRESHOLD = 70;
+
+/** Max visual width for session_name in the project line */
+export const SESSION_NAME_MAX_WIDTH = 30;
+
+export const WINDOW_5H_MS = 5 * 60 * 60 * 1000;
+export const WINDOW_7D_MS = 7 * 24 * 60 * 60 * 1000;
 
 /** Max running tools to display */
 export const MAX_RUNNING_TOOLS = 2;

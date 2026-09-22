@@ -9,6 +9,10 @@ const EN: Translations = {
     '7d_all': 'all',
     '7d_sonnet': 'Sonnet',
     cost: 'Cost',
+    limitIn: 'limit in',
+    reset: 'reset',
+    pr: 'PR',
+    cache: 'cache',
   },
   time: {
     hours: ' hours',
@@ -39,6 +43,10 @@ const KO: Translations = {
     '7d_all': '전체',
     '7d_sonnet': '소넷',
     cost: '비용',
+    limitIn: '한도까지',
+    reset: '리셋',
+    pr: 'PR',
+    cache: '캐시',
   },
   time: {
     hours: '시간',

@@ -2,7 +2,7 @@ import path from 'node:path';
 import type { Translations } from '../types.js';
 
 export function formatTokens(n: number): string {
-  if (n >= 950_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 950_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`;
   if (n >= 1_000) return `${Math.round(n / 1_000)}K`;
   return n.toString();
 }
@@ -11,9 +11,8 @@ export function formatCost(usd: number): string {
   return `$${usd.toFixed(2)}`;
 }
 
-export function formatTimeRemaining(resetAt: string, t: Translations): string {
+export function formatTimeRemaining(resetAt: string, t: Translations, now = Date.now()): string {
   const resetTime = new Date(resetAt).getTime();
-  const now = Date.now();
   const diffMs = resetTime - now;
 
   if (diffMs <= 0) return '0m';
@@ -27,10 +26,11 @@ export function formatTimeRemaining(resetAt: string, t: Translations): string {
   return `${minutes}${t.time.shortMinutes}`;
 }
 
-export function formatDaysRemaining(resetAt: string, t: Translations): string {
-  const diffMs = new Date(resetAt).getTime() - Date.now();
+/** Compact: `2d5h` / `2일5시`; falls back to h/m under one day */
+export function formatDaysRemaining(resetAt: string, t: Translations, now = Date.now()): string {
+  const diffMs = new Date(resetAt).getTime() - now;
   const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  if (days < 1) return formatTimeRemaining(resetAt, t);
+  if (days < 1) return formatTimeRemaining(resetAt, t, now);
   const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
   return `${days}${t.time.shortDays}${hours}${t.time.shortHours}`;
 }
@@ -63,6 +63,13 @@ export function shortenModelName(name: string): string {
 export function truncate(text: string, maxLen: number): string {
   if (text.length <= maxLen) return text;
   return text.slice(0, maxLen - 3) + '...';
+}
+
+/** Truncate plain text to a visual width (CJK = 2 cols), appending `…` when cut */
+export function truncateVisual(text: string, maxWidth: number): string {
+  if (visualWidth(text) <= maxWidth) return text;
+  const body = sliceVisible(text, maxWidth - 1).replace(/\x1b\[0m$/, '');
+  return body + '…';
 }
 
 export function truncatePath(filePath: string, maxLen = 20): string {

@@ -9,7 +9,7 @@ import type { StdinInput, Config, RenderContext } from './types.js';
 import { DEFAULT_CONFIG } from './types.js';
 import { COLORS, colorize } from './utils/colors.js';
 import { formatSessionDuration, formatSessionDurationMs } from './utils/formatters.js';
-import { fetchUsageLimits } from './utils/api-client.js';
+import { resolveRateLimits } from './utils/rate-limits.js';
 import { countConfigs } from './utils/config-counter.js';
 import { parseTranscript } from './utils/transcript.js';
 import { getGitInfo } from './utils/git.js';
@@ -41,6 +41,15 @@ function isValidTranscriptPath(p: string): boolean {
   } catch {
     return false;
   }
+}
+
+// $COLUMNS → process.stdout.columns → 120
+function resolveTermWidth(): number {
+  const fromEnv = parseInt(process.env.COLUMNS ?? '', 10);
+  if (Number.isFinite(fromEnv) && fromEnv > 0) return fromEnv;
+  const fromTty = process.stdout.columns;
+  if (typeof fromTty === 'number' && fromTty > 0) return fromTty;
+  return 120;
 }
 
 async function readStdin(): Promise<StdinInput | null> {
@@ -101,7 +110,9 @@ async function main(): Promise<void> {
 
   const transcriptPath = stdin.transcript_path ?? '';
   const validTranscriptPath = isValidTranscriptPath(transcriptPath) ? transcriptPath : '';
-  const validCwd = isValidDirectory(stdin.cwd ?? '') ? stdin.cwd : undefined;
+  // Prefer workspace.project_dir → workspace.current_dir → cwd
+  const cwdCandidates = [stdin.workspace?.project_dir, stdin.workspace?.current_dir, stdin.cwd];
+  const validCwd = cwdCandidates.find((p) => isValidDirectory(p ?? ''));
 
   // Resolve translations synchronously when language is explicit (not 'auto')
   const t = await getTranslations(config);
@@ -111,14 +122,17 @@ async function main(): Promise<void> {
     parseTranscript(validTranscriptPath),
     countConfigs(validCwd),
     getGitInfo(validCwd),
-    fetchUsageLimits(config.cache.ttlSeconds),
+    resolveRateLimits(stdin, config),
   ]);
 
-  // Native duration vs transcript-based
+  // Native duration (cost.total_duration_ms) vs transcript-based
   const sessionDuration =
-    stdin.total_duration_ms != null
-      ? formatSessionDurationMs(stdin.total_duration_ms)
+    stdin.cost.total_duration_ms != null
+      ? formatSessionDurationMs(stdin.cost.total_duration_ms)
       : formatSessionDuration(transcript.sessionStart);
+
+  const termWidth = resolveTermWidth();
+  const compact = termWidth < (config.display?.compactWidth ?? 100);
 
   const ctx: RenderContext = {
     stdin,
@@ -128,6 +142,9 @@ async function main(): Promise<void> {
     gitInfo,
     sessionDuration,
     rateLimits,
+    termWidth,
+    compact,
+    now: Date.now(),
   };
 
   render(ctx, t);
