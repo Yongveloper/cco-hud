@@ -2,7 +2,7 @@ import path from 'node:path';
 import type { RenderContext, Translations } from '../types.js';
 import { COLORS, SEP, SEP_INNER, colorize, dim, cyan, yellow } from '../utils/colors.js';
 import { truncateVisual } from '../utils/formatters.js';
-import { SESSION_NAME_MAX_WIDTH } from '../constants.js';
+import { SESSION_NAME_MAX_WIDTH, TRIM } from '../constants.js';
 
 export function renderProjectLine(ctx: RenderContext, t: Translations): string {
   const parts: string[] = [];
@@ -10,12 +10,12 @@ export function renderProjectLine(ctx: RenderContext, t: Translations): string {
   const head = renderProjectHead(ctx, t);
   if (head) parts.push(head);
 
-  if (!ctx.compact) {
+  if (ctx.trim < TRIM.COUNTS) {
     const counts = renderConfigCounts(ctx);
     if (counts) parts.push(counts);
   }
 
-  if (ctx.sessionDuration) {
+  if (ctx.sessionDuration && ctx.trim < TRIM.DURATION) {
     parts.push(dim(`⏱ ${ctx.sessionDuration}`));
   }
 
@@ -36,7 +36,7 @@ function renderProjectHead(ctx: RenderContext, t: Translations): string | null {
 
   const items: string[] = [`${dim('▸')} ${yellow(name)}`];
 
-  if (ctx.stdin.session_name) {
+  if (ctx.stdin.session_name && ctx.trim < TRIM.SESSION_NAME) {
     items.push(dim(truncateVisual(ctx.stdin.session_name, SESSION_NAME_MAX_WIDTH)));
   }
 

@@ -23,6 +23,7 @@ import {
   CACHE_WARN_THRESHOLD,
   PROGRESS_BAR_WIDTH,
   PROGRESS_BAR_WIDTH_COMPACT,
+  TRIM,
 } from '../constants.js';
 
 export function renderSessionLine(ctx: RenderContext, t: Translations): string {
@@ -57,21 +58,21 @@ const EFFORT_ABBR: Record<string, string> = {
 
 function renderModelGroup(ctx: RenderContext, t: Translations): string {
   const model = colorize(shortenModelName(ctx.stdin.model.display_name), COLORS.cyan);
-  const badges = ctx.config.display?.showBadges !== false ? renderBadges(ctx, t) : [];
+  const badges = ctx.config.display?.showBadges !== false && ctx.trim < TRIM.BADGES ? renderBadges(ctx, t) : [];
   return [model, ...badges].join(' ');
 }
 
 function renderBadges(ctx: RenderContext, t: Translations): string[] {
-  const { stdin, compact } = ctx;
+  const { stdin } = ctx;
   const badges: string[] = [];
 
-  if (!compact && stdin.effort?.level) {
+  if (stdin.effort?.level) {
     const abbr = EFFORT_ABBR[stdin.effort.level] ?? stdin.effort.level.slice(0, 2);
     badges.push(dim(`e:${abbr}`));
   }
   if (stdin.fast_mode) badges.push(dim('fast'));
-  if (!compact && stdin.thinking?.enabled) badges.push(dim('θ'));
-  if (!compact && stdin.prompt_cache?.hit_ratio != null) {
+  if (stdin.thinking?.enabled) badges.push(dim('θ'));
+  if (stdin.prompt_cache?.hit_ratio != null) {
     const pct = Math.round(stdin.prompt_cache.hit_ratio * 100);
     const color = pct < CACHE_WARN_THRESHOLD ? COLORS.yellow : COLORS.dim;
     badges.push(colorize(`${t.labels.cache} ${pct}%`, color));
@@ -106,11 +107,11 @@ function renderContextGroup(ctx: RenderContext, _t: Translations): string | null
   const danger = percent >= CONTEXT_DANGER_THRESHOLD;
   const color = getColorForPercent(percent);
   const textColor = danger ? COLORS.red : COLORS.dim;
-  const width = ctx.compact ? PROGRESS_BAR_WIDTH_COMPACT : PROGRESS_BAR_WIDTH;
+  const width = ctx.trim >= TRIM.BAR ? PROGRESS_BAR_WIDTH_COMPACT : PROGRESS_BAR_WIDTH;
 
   const items: string[] = [renderProgressBar(percent, width, color), colorize(`${percent}%`, color)];
 
-  if (!ctx.compact) {
+  if (ctx.trim < TRIM.TOKENS) {
     items.push(danger ? colorize(`${formatTokens(used)}/${formatTokens(cw.context_window_size)}`, COLORS.red) : `${formatTokens(used)}/${formatTokens(cw.context_window_size)}`);
 
     if (
@@ -167,13 +168,13 @@ function renderSevenDay(ctx: RenderContext, t: Translations): string | null {
 
   if (seven_day) {
     let text = renderLimit(t.labels['7d'], seven_day);
-    if (!ctx.compact && seven_day.resets_at) {
+    if (ctx.trim < TRIM.WEEKLY_RESET && seven_day.resets_at) {
       text += ` (${formatDaysRemaining(seven_day.resets_at, t, ctx.now)})`;
     }
     items.push(text);
   }
 
-  if (!ctx.compact) {
+  if (ctx.trim < TRIM.SCOPED) {
     if (seven_day_sonnet) items.push(renderLimit(t.labels['7d_sonnet'], seven_day_sonnet));
     if (seven_day_scoped) items.push(renderLimit(seven_day_scoped.model, seven_day_scoped));
   }
@@ -216,6 +217,6 @@ function formatCostUsd(cost: number): string {
 
 function renderCost(ctx: RenderContext): string | null {
   if (ctx.config.plan === 'enterprise') return null; // already shown in place of limits
-  if (ctx.config.display?.showCost === false) return null;
+  if (ctx.config.display?.showCost === false || ctx.trim >= TRIM.COST) return null;
   return dim(formatCostUsd(ctx.stdin.cost.total_cost_usd));
 }

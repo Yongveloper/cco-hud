@@ -92,8 +92,6 @@ export interface Config {
     showCost?: boolean;
     /** Show effort / fast / thinking / cache badges. Default true. */
     showBadges?: boolean;
-    /** Terminal width below which compact layout is used. Default 100. */
-    compactWidth?: number;
   };
 }
 
@@ -205,8 +203,8 @@ export interface RenderContext {
   rateLimits: UsageLimits | null;
   /** Terminal columns ($COLUMNS → process.stdout.columns → 120) */
   termWidth: number;
-  /** termWidth < config.display.compactWidth (default 100) */
-  compact: boolean;
+  /** Current trim level (0 = everything). See TRIM in constants.ts */
+  trim: number;
   /** Date.now() captured once per render */
   now: number;
 }

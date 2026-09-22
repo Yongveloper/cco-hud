@@ -1,7 +1,28 @@
+/**
+ * Progressive trimming when a line overflows the terminal. render/index.ts
+ * re-renders with increasing `ctx.trim` until the line fits (or MAX).
+ * Session line drops: badges → token count → bar shrinks → cost → weekly reset → scoped limits.
+ * Project line drops: session name → skill → config counts → stats → duration.
+ */
+export const TRIM = {
+  BADGES: 1,
+  SESSION_NAME: 1,
+  TOKENS: 2,
+  SKILL: 2,
+  BAR: 3,
+  COUNTS: 3,
+  COST: 4,
+  STATS: 4,
+  WEEKLY_RESET: 5,
+  DURATION: 5,
+  SCOPED: 6,
+  MAX: 6,
+} as const;
+
 /** Width of the progress bar in terminal characters */
 export const PROGRESS_BAR_WIDTH = 10;
 
-/** Width of the progress bar in compact mode */
+/** Width of the progress bar once TRIM.BAR is reached */
 export const PROGRESS_BAR_WIDTH_COMPACT = 6;
 
 

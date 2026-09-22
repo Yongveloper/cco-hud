@@ -5,17 +5,32 @@ import { renderSessionLine } from './session-line.js';
 import { renderProjectLine } from './project-line.js';
 import { renderToolsLine, renderAgentsLine, renderTodosLine } from './activity-lines.js';
 import { renderStatsLine } from './stats-line.js';
+import { TRIM } from '../constants.js';
+
+/** Re-render with increasing trim level until the line fits the terminal */
+function fitLine(ctx: RenderContext, renderFn: (c: RenderContext) => string): string {
+  let level = 0;
+  let line = renderFn({ ...ctx, trim: level });
+  while (level < TRIM.MAX && visualWidth(line) > ctx.termWidth) {
+    level++;
+    line = renderFn({ ...ctx, trim: level });
+  }
+  return line;
+}
 
 export function render(ctx: RenderContext, t: Translations): void {
   const display = ctx.config.display ?? {};
   const termWidth = ctx.termWidth;
 
-  const stats = display.showStats !== false && !ctx.compact ? renderStatsLine(ctx, t) : '';
-  const projectLine = renderProjectLine(ctx, t);
+  const renderProject = (c: RenderContext): string => {
+    const stats = display.showStats !== false && c.trim < TRIM.STATS ? renderStatsLine(c, t) : '';
+    const projectLine = renderProjectLine(c, t);
+    return stats ? `${projectLine}${SEP}${stats}` : projectLine;
+  };
 
   const lines = [
-    renderSessionLine(ctx, t),
-    stats ? `${projectLine}${SEP}${stats}` : projectLine,
+    fitLine(ctx, (c) => renderSessionLine(c, t)),
+    fitLine(ctx, renderProject),
     display.showTools !== false ? renderToolsLine(ctx) : null,
     display.showAgents !== false ? renderAgentsLine(ctx) : null,
     display.showTodos !== false ? renderTodosLine(ctx, t) : null,

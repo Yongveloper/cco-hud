@@ -1,5 +1,6 @@
 import type { RenderContext, Translations } from '../types.js';
 import { COLORS, SEP, colorize, dim } from '../utils/colors.js';
+import { TRIM } from '../constants.js';
 
 export function renderStatsLine(ctx: RenderContext, t: Translations): string {
   const parts: string[] = [];
@@ -9,7 +10,7 @@ export function renderStatsLine(ctx: RenderContext, t: Translations): string {
     parts.push(colorize(`∴ ${t.stats.thinking}`, COLORS.magenta));
   }
 
-  if (tr.lastSkill) {
+  if (tr.lastSkill && ctx.trim < TRIM.SKILL) {
     parts.push(colorize(`◇ ${tr.lastSkill.name.split(':').pop()}`, COLORS.cyan));
   }
 

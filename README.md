@@ -31,9 +31,14 @@ Fable 5.1 e:hi θ 캐시 98% │ ████░░░░░░ 40% 402K/1M │ 
 - 현재 병목인 한도(`is_active`)는 굵게.
 - 컨텍스트 80% 이상 `⚠ /compact`, 90% 이상 그룹 전체 빨강.
 
-## Compact 모드
+## 자동 축약
 
-터미널 폭이 `display.compactWidth`(기본 100) 미만이면: 바 6칸, 토큰 수 생략, 배지는 `fast`만, 설정 파일 수·stats 생략, 7일 그룹은 `7일: 71%` 만.
+터미널 폭을 넘치는 행은 우선순위가 낮은 항목부터 하나씩 빼고 다시 그린다(`constants.ts` 의 `TRIM`).
+
+- 1행: 배지 → 토큰 수 → 바 6칸으로 축소 → 비용 → 7일 리셋 시간 → Fable/소넷
+- 2행: 세션 이름 → 스킬 → 설정 파일 수 → stats → 세션 시간
+
+핵심인 `5시간: 29% (2시54분) │ 7일: 74%` 는 마지막까지 남는다.
 
 ## 데이터 소스
 
@@ -69,8 +74,7 @@ claude plugin install cco-hud@cco-hud
   "cache": { "ttlSeconds": 60 },
   "display": {
     "showTools": true, "showAgents": true, "showTodos": true, "showStats": true,
-    "showTokenBreakdown": true, "showCost": true, "showBadges": true,
-    "compactWidth": 100
+    "showTokenBreakdown": true, "showCost": true, "showBadges": true
   }
 }
 ```
@@ -81,7 +85,7 @@ claude plugin install cco-hud@cco-hud
 bun install
 bun x tsc --noEmit                              # Bun 전역 타입 오류 2건은 기존 이슈
 cat test/fixtures/stdin.json | bun src/index.ts # 실측 stdin 픽스처로 렌더
-COLUMNS=80 cat test/fixtures/stdin.json | bun src/index.ts   # compact
+COLUMNS=80 bun src/index.ts < test/fixtures/stdin.json   # 좁은 폭 축약 확인
 ```
 
 소스 수정 후 설치본 반영: `.claude-plugin/plugin.json`·`marketplace.json`·`package.json` 버전을 올리고 `claude plugin update cco-hud`. 버전이 같으면 갱신되지 않는다. statusLine 명령은 `sort -V` 로 최신 버전 디렉터리를 고른다.

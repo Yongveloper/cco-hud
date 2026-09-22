@@ -132,7 +132,6 @@ async function main(): Promise<void> {
       : formatSessionDuration(transcript.sessionStart);
 
   const termWidth = resolveTermWidth();
-  const compact = termWidth < (config.display?.compactWidth ?? 100);
 
   const ctx: RenderContext = {
     stdin,
@@ -143,7 +142,7 @@ async function main(): Promise<void> {
     sessionDuration,
     rateLimits,
     termWidth,
-    compact,
+    trim: 0,
     now: Date.now(),
   };
 
