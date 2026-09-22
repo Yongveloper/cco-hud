@@ -4,6 +4,9 @@ export const PROGRESS_BAR_WIDTH = 10;
 /** Width of the progress bar in compact mode */
 export const PROGRESS_BAR_WIDTH_COMPACT = 6;
 
+/** Width of the mini bar shown next to each rate limit */
+export const LIMIT_BAR_WIDTH = 5;
+
 /** Progress bar glyphs */
 export const BAR_FILLED = '▰';
 export const BAR_EMPTY = '▱';

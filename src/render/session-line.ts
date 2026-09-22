@@ -24,6 +24,7 @@ import {
   CACHE_WARN_THRESHOLD,
   PROGRESS_BAR_WIDTH,
   PROGRESS_BAR_WIDTH_COMPACT,
+  LIMIT_BAR_WIDTH,
   WINDOW_5H_MS,
   WINDOW_7D_MS,
 } from '../constants.js';
@@ -82,6 +83,11 @@ function renderBadges(ctx: RenderContext, t: Translations): string[] {
   return badges;
 }
 
+/** Values are the payload: default fg when fine, yellow/red when not. Labels stay dim. */
+function valueColor(statusColor: string): string {
+  return statusColor === COLORS.dim ? '' : statusColor;
+}
+
 // --- context --------------------------------------------------------------
 
 function resolveContextPercent(ctx: RenderContext): { percent: number; used: number } | null {
@@ -111,7 +117,7 @@ function renderContextGroup(ctx: RenderContext, _t: Translations): string | null
   const textColor = danger ? COLORS.red : COLORS.dim;
   const width = ctx.compact ? PROGRESS_BAR_WIDTH_COMPACT : PROGRESS_BAR_WIDTH;
 
-  const items: string[] = [renderProgressBar(percent, width, color), colorize(`${percent}%`, color)];
+  const items: string[] = [renderProgressBar(percent, width, color), colorize(`${percent}%`, valueColor(color))];
 
   if (!ctx.compact) {
     items.push(colorize(`${formatTokens(used)}/${formatTokens(cw.context_window_size)}`, textColor));
@@ -140,7 +146,7 @@ function renderContextGroup(ctx: RenderContext, _t: Translations): string | null
 function renderPct(limit: RateLimitInfo, color: string): string {
   const pct = Math.round(limit.utilization);
   const prefix = limit.is_active === true ? BOLD : '';
-  return `${prefix}${color}${pct}%${RESET}`;
+  return `${prefix}${valueColor(color)}${pct}%${RESET}`;
 }
 
 function renderBurnWarning(hitsLimitAt: string | undefined, ctx: RenderContext, t: Translations): string {
@@ -149,10 +155,18 @@ function renderBurnWarning(hitsLimitAt: string | undefined, ctx: RenderContext, 
   return ` ${colorize(`⚠ ${t.labels.limitIn} ${eta}`, COLORS.yellow)}`;
 }
 
+function renderReset(remaining: string): string {
+  return `${dim('↺')}${remaining}`;
+}
+
+function renderLimitBar(limit: RateLimitInfo, color: string, ctx: RenderContext): string {
+  return ctx.compact ? '' : `${renderProgressBar(limit.utilization, LIMIT_BAR_WIDTH, color)} `;
+}
+
 function renderFiveHour(limit: RateLimitInfo, ctx: RenderContext, t: Translations): string {
   const color = getWindowedColor(limit.utilization, limit.resets_at, WINDOW_5H_MS, ctx.now);
-  let text = `${dim(t.labels['5h'])} ${renderPct(limit, color)}`;
-  if (limit.resets_at) text += ` ${dim(`↺${formatTimeRemaining(limit.resets_at, t, ctx.now)}`)}`;
+  let text = `${dim(t.labels['5h'])} ${renderLimitBar(limit, color, ctx)}${renderPct(limit, color)}`;
+  if (limit.resets_at) text += ` ${renderReset(formatTimeRemaining(limit.resets_at, t, ctx.now))}`;
   text += renderBurnWarning(ctx.rateLimits?.burn?.five_hour?.hitsLimitAt, ctx, t);
   return text;
 }
@@ -167,9 +181,10 @@ function renderSevenDay(ctx: RenderContext, t: Translations): string | null {
     getWindowedColor(l.utilization, l.resets_at ?? seven_day?.resets_at, WINDOW_7D_MS, ctx.now);
 
   if (seven_day) {
-    let text = `${dim(t.labels['7d'])} ${renderPct(seven_day, windowColor(seven_day))}`;
+    const color = windowColor(seven_day);
+    let text = `${dim(t.labels['7d'])} ${renderLimitBar(seven_day, color, ctx)}${renderPct(seven_day, color)}`;
     if (!ctx.compact && seven_day.resets_at) {
-      text += ` ${dim(`↺${formatDaysRemaining(seven_day.resets_at, t, ctx.now)}`)}`;
+      text += ` ${renderReset(formatDaysRemaining(seven_day.resets_at, t, ctx.now))}`;
     }
     items.push(text);
   }
