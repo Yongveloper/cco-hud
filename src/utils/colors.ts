@@ -4,9 +4,6 @@ import {
   BAR_EMPTY,
   COLOR_THRESHOLD_WARNING,
   COLOR_THRESHOLD_DANGER,
-  RELATIVE_WARN_MARGIN,
-  RELATIVE_DANGER_MARGIN,
-  RELATIVE_HARD_DANGER,
 } from '../constants.js';
 
 export const COLORS = {
@@ -77,26 +74,6 @@ export function getStatusColor(
 ): string {
   if (pct >= thresholds.danger) return COLORS.red;
   if (pct >= thresholds.warn) return COLORS.yellow;
-  return COLORS.dim;
-}
-
-/**
- * Color for a windowed limit (5h / 7d) relative to elapsed window time.
- * expected = elapsedFraction * 100; yellow when pct > expected + 15,
- * red when pct > expected + 30 or pct >= 90. Absolute fallback when resets_at is missing.
- */
-export function getWindowedColor(
-  pct: number,
-  resetsAt: string | undefined,
-  windowMs: number,
-  now: number,
-): string {
-  const remaining = resetsAt ? new Date(resetsAt).getTime() - now : NaN;
-  if (Number.isNaN(remaining)) return getStatusColor(pct);
-  const elapsed = Math.min(1, Math.max(0, 1 - remaining / windowMs));
-  const expected = elapsed * 100;
-  if (pct >= RELATIVE_HARD_DANGER || pct > expected + RELATIVE_DANGER_MARGIN) return COLORS.red;
-  if (pct > expected + RELATIVE_WARN_MARGIN) return COLORS.yellow;
   return COLORS.dim;
 }
 

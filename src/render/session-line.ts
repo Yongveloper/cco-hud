@@ -7,8 +7,7 @@ import {
   SEP_INNER,
   colorize,
   dim,
-  getStatusColor,
-  getWindowedColor,
+  getColorForPercent,
   renderProgressBar,
 } from '../utils/colors.js';
 import {
@@ -24,9 +23,6 @@ import {
   CACHE_WARN_THRESHOLD,
   PROGRESS_BAR_WIDTH,
   PROGRESS_BAR_WIDTH_COMPACT,
-  LIMIT_BAR_WIDTH,
-  WINDOW_5H_MS,
-  WINDOW_7D_MS,
 } from '../constants.js';
 
 export function renderSessionLine(ctx: RenderContext, t: Translations): string {
@@ -83,11 +79,6 @@ function renderBadges(ctx: RenderContext, t: Translations): string[] {
   return badges;
 }
 
-/** Values are the payload: default fg when fine, yellow/red when not. Labels stay dim. */
-function valueColor(statusColor: string): string {
-  return statusColor === COLORS.dim ? '' : statusColor;
-}
-
 // --- context --------------------------------------------------------------
 
 function resolveContextPercent(ctx: RenderContext): { percent: number; used: number } | null {
@@ -113,14 +104,14 @@ function renderContextGroup(ctx: RenderContext, _t: Translations): string | null
   const cw = ctx.stdin.context_window;
 
   const danger = percent >= CONTEXT_DANGER_THRESHOLD;
-  const color = getStatusColor(percent, { warn: CONTEXT_WARN_THRESHOLD, danger: CONTEXT_DANGER_THRESHOLD });
+  const color = getColorForPercent(percent);
   const textColor = danger ? COLORS.red : COLORS.dim;
   const width = ctx.compact ? PROGRESS_BAR_WIDTH_COMPACT : PROGRESS_BAR_WIDTH;
 
-  const items: string[] = [renderProgressBar(percent, width, color), colorize(`${percent}%`, valueColor(color))];
+  const items: string[] = [renderProgressBar(percent, width, color), colorize(`${percent}%`, color)];
 
   if (!ctx.compact) {
-    items.push(colorize(`${formatTokens(used)}/${formatTokens(cw.context_window_size)}`, textColor));
+    items.push(danger ? colorize(`${formatTokens(used)}/${formatTokens(cw.context_window_size)}`, COLORS.red) : `${formatTokens(used)}/${formatTokens(cw.context_window_size)}`);
 
     if (
       percent >= CONTEXT_HIGH_THRESHOLD &&
@@ -143,10 +134,15 @@ function renderContextGroup(ctx: RenderContext, _t: Translations): string | null
 
 // --- rate limits ----------------------------------------------------------
 
-function renderPct(limit: RateLimitInfo, color: string): string {
+function renderPct(limit: RateLimitInfo): string {
   const pct = Math.round(limit.utilization);
   const prefix = limit.is_active === true ? BOLD : '';
-  return `${prefix}${valueColor(color)}${pct}%${RESET}`;
+  return `${prefix}${getColorForPercent(pct)}${pct}%${RESET}`;
+}
+
+/** `label: 27%` — labels in default fg, pct always colored (green/yellow/red) */
+function renderLimit(label: string, limit: RateLimitInfo): string {
+  return `${label}: ${renderPct(limit)}`;
 }
 
 function renderBurnWarning(hitsLimitAt: string | undefined, ctx: RenderContext, t: Translations): string {
@@ -155,18 +151,9 @@ function renderBurnWarning(hitsLimitAt: string | undefined, ctx: RenderContext, 
   return ` ${colorize(`⚠ ${t.labels.limitIn} ${eta}`, COLORS.yellow)}`;
 }
 
-function renderReset(remaining: string): string {
-  return `${dim('↺')}${remaining}`;
-}
-
-function renderLimitBar(limit: RateLimitInfo, color: string, ctx: RenderContext): string {
-  return ctx.compact ? '' : `${renderProgressBar(limit.utilization, LIMIT_BAR_WIDTH, color)} `;
-}
-
 function renderFiveHour(limit: RateLimitInfo, ctx: RenderContext, t: Translations): string {
-  const color = getWindowedColor(limit.utilization, limit.resets_at, WINDOW_5H_MS, ctx.now);
-  let text = `${dim(t.labels['5h'])} ${renderLimitBar(limit, color, ctx)}${renderPct(limit, color)}`;
-  if (limit.resets_at) text += ` ${renderReset(formatTimeRemaining(limit.resets_at, t, ctx.now))}`;
+  let text = renderLimit(t.labels['5h'], limit);
+  if (limit.resets_at) text += ` (${formatTimeRemaining(limit.resets_at, t, ctx.now)})`;
   text += renderBurnWarning(ctx.rateLimits?.burn?.five_hour?.hitsLimitAt, ctx, t);
   return text;
 }
@@ -177,25 +164,18 @@ function renderSevenDay(ctx: RenderContext, t: Translations): string | null {
   if (!seven_day && !seven_day_sonnet && !seven_day_scoped) return null;
 
   const items: string[] = [];
-  const windowColor = (l: RateLimitInfo) =>
-    getWindowedColor(l.utilization, l.resets_at ?? seven_day?.resets_at, WINDOW_7D_MS, ctx.now);
 
   if (seven_day) {
-    const color = windowColor(seven_day);
-    let text = `${dim(t.labels['7d'])} ${renderLimitBar(seven_day, color, ctx)}${renderPct(seven_day, color)}`;
+    let text = renderLimit(t.labels['7d'], seven_day);
     if (!ctx.compact && seven_day.resets_at) {
-      text += ` ${renderReset(formatDaysRemaining(seven_day.resets_at, t, ctx.now))}`;
+      text += ` (${formatDaysRemaining(seven_day.resets_at, t, ctx.now)})`;
     }
     items.push(text);
   }
 
   if (!ctx.compact) {
-    if (seven_day_sonnet) {
-      items.push(`${dim(t.labels['7d_sonnet'])} ${renderPct(seven_day_sonnet, windowColor(seven_day_sonnet))}`);
-    }
-    if (seven_day_scoped) {
-      items.push(`${dim(seven_day_scoped.model)} ${renderPct(seven_day_scoped, windowColor(seven_day_scoped))}`);
-    }
+    if (seven_day_sonnet) items.push(renderLimit(t.labels['7d_sonnet'], seven_day_sonnet));
+    if (seven_day_scoped) items.push(renderLimit(seven_day_scoped.model, seven_day_scoped));
   }
 
   if (items.length === 0) return null;
@@ -208,7 +188,7 @@ function renderRateLimitGroups(ctx: RenderContext, t: Translations): string[] {
   const groups: string[] = [];
 
   if (isEnterprise) {
-    groups.push(`${dim(t.labels.cost)} ${colorize(formatCostUsd(ctx.stdin.cost.total_cost_usd), COLORS.cyan)}`);
+    groups.push(`${t.labels.cost}: ${colorize(formatCostUsd(ctx.stdin.cost.total_cost_usd), COLORS.cyan)}`);
     if (limits?.five_hour) groups.push(renderFiveHour(limits.five_hour, ctx, t));
     return groups;
   }
