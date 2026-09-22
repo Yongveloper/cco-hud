@@ -53,7 +53,7 @@ claude plugin install cco-hud@cco-hud
 ```json
 "statusLine": {
   "type": "command",
-  "command": "bash -c '\"$HOME/.bun/bin/bun\" \"$(ls -td ~/.claude/plugins/cache/cco-hud/cco-hud/*/ | head -1)src/index.ts\"'",
+  "command": "bash -c '\"$HOME/.bun/bin/bun\" \"$(ls -d ~/.claude/plugins/cache/cco-hud/cco-hud/*/ | sort -V | tail -1)src/index.ts\"'",
   "refreshInterval": 60
 }
 ```
@@ -84,4 +84,4 @@ cat test/fixtures/stdin.json | bun src/index.ts # 실측 stdin 픽스처로 렌�
 COLUMNS=80 cat test/fixtures/stdin.json | bun src/index.ts   # compact
 ```
 
-소스 수정 후 설치본 반영: `claude plugin update cco-hud`.
+소스 수정 후 설치본 반영: `.claude-plugin/plugin.json`·`marketplace.json`·`package.json` 버전을 올리고 `claude plugin update cco-hud`. 버전이 같으면 갱신되지 않는다. statusLine 명령은 `sort -V` 로 최신 버전 디렉터리를 고른다.
