@@ -1,6 +1,6 @@
 {
   "name": "cco-hud",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "type": "module",
   "description": "Personal Claude Code status line: rate limits (5h / 7d with reset countdown / model-scoped weekly), context, git, tool activity",
   "main": "dist/index.js",

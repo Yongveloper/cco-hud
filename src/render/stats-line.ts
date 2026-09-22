@@ -10,7 +10,7 @@ export function renderStatsLine(ctx: RenderContext, t: Translations): string {
   }
 
   if (tr.lastSkill) {
-    parts.push(colorize(`◇ skill:${tr.lastSkill.name}`, COLORS.cyan));
+    parts.push(colorize(`◇ ${tr.lastSkill.name.split(':').pop()}`, COLORS.cyan));
   }
 
   const lines = renderLinesChanged(ctx.stdin.cost.total_lines_added, ctx.stdin.cost.total_lines_removed);
